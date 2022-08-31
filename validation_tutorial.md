@@ -1,14 +1,14 @@
 # Validate the draw result
 
-A small overview how the algorithmus works can be found at the [README.md](README.MD).
+A small overview about the project and how the validation algorithmus works can be found at the [README.md](README.MD).
 
 ## ticket hash
 
-To reduce the costs of calculation the draw hash, we calculate a md5 hash for each ticket directly after it's creation.
+To reduce the costs of calculation the draw hash, a md5 hash is calculated for each ticket directly after it's creation.
 
-In the hash we're including the deposit transaction id, the sender address, block height, the deposited amount (in DFI), the draw identifier and the created ticket number.
+In the hash includes the deposit transaction id, the sender address, block height, the deposited amount (in DFI), the draw identifier and the random ticket number.
 
-small example how we calculate the md5 hash in PHP:
+md5 hash calculation (in PHP):
 
 ```
 $ticketHash = md5(
@@ -26,11 +26,11 @@ $ticketHash = md5(
 
 ## finalizing draw
 
-- When finalizing a draw, we concat all ticket hashs ordered by creation block height.
-Betweet each hash we add `;` as separator.
+- When finalizing a draw, all ticket hashes are concatenated ordered by creation block height.
+Betweet each hash the separator `;` is added.
 The resulting string is hashed again with md5.
-- We're calculating the draw seed with the `crc32()`, which calculates the crc32 polynomial of a string and results in an integer.
-- With `srand()` the randomizer is now seeded. Everytime we're creating a random number using `rand(0, 999999)`, the result will be the same for the given seed. To fill up the final number to a length of 6 numbers, we're using `str_pad(rand(0, 999999), 6, 0, STR_PAD_LEFT)`
+- Calculating the draw seed with the `crc32()`, which calculates the crc32 polynomial of a string and results in an integer.
+- With `srand()` the randomizer is seeded. Everytime creating a random number using `rand(0, 999999)`, the result will be the same for the given seed. To fill up the final number to a length of 6 numbers, the function `str_pad(rand(0, 999999), 6, 0, STR_PAD_LEFT)` is used.
 
 ## getting the data via REST API
 
@@ -46,19 +46,26 @@ The drawing identifier can be found on our website.
 
 ## demo for verification
 
-To keep it simple for you verifing the result, you can run this script:
+To keep it simple for you verifing the result, you can run this script (PHP):
 
 ```
 $drawingId = "********"; // set this value - you find it on https://defichain-lottery.com
+$runningOnMainnet = true;
 
 /**
  *
- * DONT CHANGE THE CONTENT BELOW!
+ * DONT CHANGE THE CODE BELOW!
  *
  **/
-$baseUrl = 'https://api.defichain-lottery.com';
+$baseUrlMainnet = 'https://api.defichain-lottery.com';
+$baseUrlTestnet = 'https://api.dev.defichain-lottery.com';
 $pathUrl = "/v1/public/validate/drawing/";
-$requestUrl = sprintf('%s%s%s', $baseUrl, $pathUrl, $drawingId);
+$requestUrl = sprintf(
+  '%s%s%s',
+  $runningOnMainnet ? $baseUrlMainnet : $baseUrlTestnet,
+  $pathUrl,
+  $drawingId
+);
 
 $apiResponse = file_get_contents($requestUrl);
 $response = json_decode($apiResponse);
@@ -92,3 +99,5 @@ srand($IntSeed); // set the seed to the randomizer
 
 echo "Winning Number: " . str_pad(rand(0, 999999), 6, 0, STR_PAD_LEFT); // this is the final drawing winning number
 ```
+
+If there are less tickets bought for a draw, e.g. the tool [paiza.io](https://paiza.io/en/projects/new?language=php) can be used to run this snippet. Otherwise you will see a timeout. In this case you need to run this code locally.

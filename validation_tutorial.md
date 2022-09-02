@@ -50,54 +50,54 @@ To keep it simple for you verifing the result, you can run this script (PHP):
 
 ```
 $drawingId = "********"; // set this value - you find it on https://defichain-lottery.com
-$runningOnMainnet = true;
+$runningOnMainnet = false;
 
 /**
  *
- * DONT CHANGE THE CODE BELOW!
+ * DONT CHANGE THE CONTENT BELOW!
  *
  **/
-$baseUrlMainnet = 'https://api.defichain-lottery.com';
-$baseUrlTestnet = 'https://api.dev.defichain-lottery.com';
-$pathUrl = "/v1/public/validate/drawing/";
-$requestUrl = sprintf(
-  '%s%s%s',
-  $runningOnMainnet ? $baseUrlMainnet : $baseUrlTestnet,
-  $pathUrl,
-  $drawingId
-);
+function validateDrawing(string $drawingId, bool $isMainnet)
+{
+  $baseUrl = 'https://api.dev.defichain-lottery.com';
+  $pathUrl = "/v1/public/validate/drawing/";
+  $requestUrl = sprintf('%s%s%s', $baseUrl, $pathUrl, $drawingId);
 
-$apiResponse = file_get_contents($requestUrl);
-$response = json_decode($apiResponse);
+  $apiResponse = file_get_contents($requestUrl);
+  $response = json_decode($apiResponse);
 
-$rawString = '';
-foreach ($response->tickets as $ticket) {
-  $ticketHash = md5(
-    sprintf(
-      '%s_%s_%s_%f_%s_%s;',
-      $ticket->transactionId,
-      $ticket->senderAddress,
-      $ticket->blockHeight,
-      $ticket->amountDeposited,
-      $ticket->ticketNumber,
-      $response->validationData->drawIdentifier
-    )
-  );
-  if ($ticketHash != $ticket->md5Hash) {
-    echo "ERROR ticket hash " . $ticketHash . PHP_EOL . PHP_EOL;
+  $rawString = '';
+  foreach ($response->tickets as $ticket) {
+    $ticketHash = md5(
+      sprintf(
+        '%s_%s_%s_%f_%s_%s;',
+        $ticket->transactionId,
+        $ticket->senderAddress,
+        $ticket->blockHeight,
+        $ticket->amountDeposited,
+        $ticket->ticketNumber,
+        $response->validationData->drawIdentifier
+      )
+    );
+    if ($ticketHash != $ticket->md5Hash) {
+      echo "ERROR ticket hash " . $ticketHash . PHP_EOL . PHP_EOL;
+    }
+    $rawString .= $ticketHash . ';';
   }
-  $rawString .= $ticketHash . ';';
+
+  $hash = md5(rtrim($rawString, ';')); // md5 hash of all tickets
+  $IntSeed = crc32($hash);
+
+  echo "Hash: " . $hash . PHP_EOL;
+  echo "Seed: " . $IntSeed . PHP_EOL;
+
+  srand($IntSeed); // set the seed to the randomizer
+
+  echo "Drawing: " . $drawingId . PHP_EOL;
+  echo "Winning Number: " . str_pad(rand(0, 999999), 6, 0, STR_PAD_LEFT); // this is the final drawing winning number
 }
 
-$hash = md5(rtrim($rawString, ';')); // md5 hash of all tickets
-$IntSeed = crc32($hash);
-
-echo "Hash: " . $hash . PHP_EOL;
-echo "Seed: " . $IntSeed . PHP_EOL;
-
-srand($IntSeed); // set the seed to the randomizer
-
-echo "Winning Number: " . str_pad(rand(0, 999999), 6, 0, STR_PAD_LEFT); // this is the final drawing winning number
+validateDrawing($drawingId, $runningOnMainnet);
 ```
 
 If there are less tickets bought for a draw, e.g. the tool [paiza.io](https://paiza.io/en/projects/new?language=php) can be used to run this snippet. Otherwise you will see a timeout. In this case you need to run this code locally.

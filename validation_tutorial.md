@@ -59,9 +59,15 @@ $runningOnMainnet = false;
  **/
 function validateDrawing(string $drawingId, bool $isMainnet)
 {
-  $baseUrl = 'https://api.dev.defichain-lottery.com';
+  $baseUrlMainnet = 'https://api.defichain-lottery.com';
+  $baseUrlTestnet = 'https://api.dev.defichain-lottery.com';
   $pathUrl = "/v1/public/validate/drawing/";
-  $requestUrl = sprintf('%s%s%s', $baseUrl, $pathUrl, $drawingId);
+  $requestUrl = sprintf(
+    '%s%s%s',
+    $isMainnet ? $baseUrlMainnet : $baseUrlTestnet,
+    $pathUrl,
+    $drawingId
+  );
 
   $apiResponse = file_get_contents($requestUrl);
   $response = json_decode($apiResponse);
